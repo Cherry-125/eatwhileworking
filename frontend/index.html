@@ -59,12 +59,19 @@
     5 人以上
   </label>
 </div>
+
+<div id="locationStatus" style="margin-bottom:12px;color:#666;">
+  尚未取得位置
+</div>
   
 <button id="recommendBtn">幫我想吃什麼</button>
 
 <div id="results"></div>
 
 <script>
+  let userLocation = null;
+
+  const locationStatusEl = document.getElementById("locationStatus");
   const recommendBtn = document.getElementById("recommendBtn");
   const resultsEl = document.getElementById("results");
 
@@ -97,7 +104,35 @@
     ]
   };
 
+function getUserLocation() {
+    if (!navigator.geolocation) {
+      locationStatusEl.textContent = "此瀏覽器不支援定位";
+      return;
+    }
+
+    locationStatusEl.textContent = "正在取得位置…";
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        userLocation = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+        locationStatusEl.textContent = "已取得目前位置";
+      },
+      () => {
+        locationStatusEl.textContent = "無法取得位置（請允許定位）";
+      }
+    );
+  }
+
+
   recommendBtn.addEventListener("click", () => {
+      if (!userLocation) {
+      alert("請先允許定位");
+      return;
+    }
+
     // 清空舊結果
     resultsEl.innerHTML = "";
 
@@ -119,6 +154,7 @@
       resultsEl.appendChild(card);
     });
   });
+    getUserLocation();
 </script>
 
 
