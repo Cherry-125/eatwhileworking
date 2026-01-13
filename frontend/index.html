@@ -77,6 +77,10 @@
     // 狀態
     // ========================
     let userLocation = null;
+    const DEFAULT_LOCATION = {
+      lat: 25.0330,
+      lng: 121.5654
+    };
 
     const recommendBtn = document.getElementById("recommendBtn");
     const resultsEl = document.getElementById("results");
@@ -117,13 +121,20 @@
     // ========================
     // 取得使用者位置
     // ========================
-    function getUserLocation() {
+
+    function initLocation() {
       if (!navigator.geolocation) {
-        locationStatusEl.textContent = "此瀏覽器不支援定位";
+        useDefaultLocation("瀏覽器不支援定位，使用預設位置（台北市）");
         return;
       }
+    
+    //function getUserLocation() {
+    //  if (!navigator.geolocation) {
+    //    locationStatusEl.textContent = "此瀏覽器不支援定位";
+    //    return;
+    //  }
 
-      locationStatusEl.textContent = "正在取得位置…";
+    //  locationStatusEl.textContent = "正在取得位置…";
 
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -134,20 +145,20 @@
           locationStatusEl.textContent = "已取得目前位置";
         },
         () => {
-          locationStatusEl.textContent = "無法取得位置（請允許定位）";
+          useDefaultLocation("無法取得位置，使用預設位置（台北市）");
+          //locationStatusEl.textContent = "無法取得位置（請允許定位）";
         }
       );
+    }
+    function useDefaultLocation(message) {
+      userLocation = DEFAULT_LOCATION;
+      locationStatusEl.textContent = message;
     }
 
     // ========================
     // 點擊推薦
     // ========================
     recommendBtn.addEventListener("click", () => {
-      if (!userLocation) {
-        alert("請先允許定位");
-        return;
-      }
-
       resultsEl.innerHTML = "";
 
       const people = document.querySelector(
@@ -168,9 +179,8 @@
       });
     });
 
-    // 頁面載入時自動取得位置
-    getUserLocation();
+    // 頁面載入時初始化位置
+    initLocation();
   </script>
-
 </body>
 </html>
