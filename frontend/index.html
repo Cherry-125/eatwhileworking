@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>WhatToEat</title>
+  <title>eatwhileworking</title>
   <style>
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
@@ -17,7 +17,7 @@
       padding: 12px 16px;
       font-size: 16px;
       cursor: pointer;
-      margin-bottom: 24px;
+      margin-bottom: 16px;
     }
     .card {
       background: white;
@@ -41,127 +41,136 @@
 </head>
 <body>
 
-  <h1>WhatToEat</h1>
-  
+  <h1>eatwhileworking</h1>
+
+  <!-- 人數選擇 -->
   <div style="margin-bottom:16px;">
-  <label>
-    <input type="radio" name="people" value="1" checked />
-    一個人
-  </label>
-  &nbsp;&nbsp;
-  <label>
-    <input type="radio" name="people" value="2-4" />
-    2–4 人
-  </label>
-  &nbsp;&nbsp;
-  <label>
-    <input type="radio" name="people" value="5+" />
-    5 人以上
-  </label>
-</div>
+    <label>
+      <input type="radio" name="people" value="1" checked />
+      一個人
+    </label>
+    &nbsp;&nbsp;
+    <label>
+      <input type="radio" name="people" value="2-4" />
+      2–4 人
+    </label>
+    &nbsp;&nbsp;
+    <label>
+      <input type="radio" name="people" value="5+" />
+      5 人以上
+    </label>
+  </div>
 
-<!--位置狀態-->
-<div id="locationStatus" style="margin-bottom:12px;color:#666;">
-  尚未取得位置
-</div>
-  
-<button id="recommendBtn">幫我想吃什麼</button>
+  <!-- 位置狀態 -->
+  <div id="locationStatus" style="margin-bottom:12px;color:#666;">
+    尚未取得位置
+  </div>
 
-<div id="results"></div>
+  <!-- 推薦按鈕 -->
+  <button id="recommendBtn">幫我想吃什麼</button>
 
-<script>
-  
-  let userLocation = null;
+  <!-- 推薦結果 -->
+  <div id="results"></div>
 
-  const recommendBtn = document.getElementById("recommendBtn");
-  const resultsEl = document.getElementById("results");
-  const locationStatusEl = document.getElementById("locationStatus");
+  <script>
+    // ========================
+    // 狀態
+    // ========================
+    let userLocation = null;
 
-  const allResults = {
-    "1": [
-      {
-        name: "阿宗便當",
-        price: 90,
-        reason: "一個人又天氣熱，快又便宜"
-      },
-      {
-        name: "拉麵屋",
-        price: 220,
-        reason: "一個人也適合坐下來吃"
+    const recommendBtn = document.getElementById("recommendBtn");
+    const resultsEl = document.getElementById("results");
+    const locationStatusEl = document.getElementById("locationStatus");
+
+    // ========================
+    // 假推薦資料（之後會換成 API / AI）
+    // ========================
+    const allResults = {
+      "1": [
+        {
+          name: "阿宗便當",
+          price: 90,
+          reason: "一個人又天氣熱，快又便宜"
+        },
+        {
+          name: "拉麵屋",
+          price: 220,
+          reason: "一個人也適合坐下來吃"
+        }
+      ],
+      "2-4": [
+        {
+          name: "熱炒店",
+          price: 250,
+          reason: "人多可以點菜分享"
+        }
+      ],
+      "5+": [
+        {
+          name: "合菜餐廳",
+          price: 300,
+          reason: "多人聚餐比較划算"
+        }
+      ]
+    };
+
+    // ========================
+    // 取得使用者位置
+    // ========================
+    function getUserLocation() {
+      if (!navigator.geolocation) {
+        locationStatusEl.textContent = "此瀏覽器不支援定位";
+        return;
       }
-    ],
-    "2-4": [
-      {
-        name: "熱炒店",
-        price: 250,
-        reason: "人多可以點菜分享"
-      }
-    ],
-    "5+": [
-      {
-        name: "合菜餐廳",
-        price: 300,
-        reason: "多人聚餐比較划算"
-      }
-    ]
-  };
 
-function getUserLocation() {
-    if (!navigator.geolocation) {
-      locationStatusEl.textContent = "此瀏覽器不支援定位";
-      return;
+      locationStatusEl.textContent = "正在取得位置…";
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          userLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          locationStatusEl.textContent = "已取得目前位置";
+        },
+        () => {
+          locationStatusEl.textContent = "無法取得位置（請允許定位）";
+        }
+      );
     }
 
-    locationStatusEl.textContent = "正在取得位置…";
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        userLocation = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        };
-        locationStatusEl.textContent = "已取得目前位置";
-      },
-      () => {
-        locationStatusEl.textContent = "無法取得位置（請允許定位）";
-      }
-    );
-  }
-
-
-  recommendBtn.addEventListener("click", () => {
+    // ========================
+    // 點擊推薦
+    // ========================
+    recommendBtn.addEventListener("click", () => {
       if (!userLocation) {
-      alert("請先允許定位");
-      return;
-    }
+        alert("請先允許定位");
+        return;
+      }
 
-    // 清空舊結果
-    resultsEl.innerHTML = "";
+      resultsEl.innerHTML = "";
 
-    // 取得選擇的人數
-    const people = document.querySelector(
-      'input[name="people"]:checked'
-    ).value;
+      const people = document.querySelector(
+        'input[name="people"]:checked'
+      ).value;
 
-    const results = allResults[people];
+      const results = allResults[people];
 
-    results.forEach(item => {
-      const card = document.createElement("div");
-      card.className = "card";
-      card.innerHTML = `
-        <div class="name">${item.name}</div>
-        <div class="price">$${item.price}</div>
-        <div class="reason">${item.reason}</div>
-      `;
-      resultsEl.appendChild(card);
+      results.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <div class="name">${item.name}</div>
+          <div class="price">$${item.price}</div>
+          <div class="reason">${item.reason}</div>
+        `;
+        resultsEl.appendChild(card);
+      });
     });
-  });
 
-  
-  getUserLocation();
-</script>
-
-
+    // 頁面載入時自動取得位置
+    getUserLocation();
+  </script>
 
 </body>
 </html>
