@@ -43,38 +43,84 @@
 
   <h1>WhatToEat</h1>
 
-  <button>幫我想吃什麼</button>
+  <div style="margin-bottom:16px;">
+  <label>
+    <input type="radio" name="people" value="1" checked />
+    一個人
+  </label>
+  &nbsp;&nbsp;
+  <label>
+    <input type="radio" name="people" value="2-4" />
+    2–4 人
+  </label>
+  &nbsp;&nbsp;
+  <label>
+    <input type="radio" name="people" value="5+" />
+    5 人以上
+  </label>
+</div>
+
+  <button id="recommendBtn">幫我想吃什麼</button>
+
   <div id="results"></div>
 
   <script>
-  const fakeResults = [
-    {
-      name: "阿宗便當",
-      price: 90,
-      reason: "今天很熱，又是發薪前，清爽又便宜"
-    },
-    {
-      name: "一蘭拉麵",
-      price: 220,
-      reason: "發薪後，想吃熱熱的犒賞自己"
-    }
-  ];
-
+  const recommendBtn = document.getElementById("recommendBtn");
   const resultsEl = document.getElementById("results");
 
-  fakeResults.forEach(item => {
-    const card = document.createElement("div");
-    card.className = "card";
+  const allResults = {
+    "1": [
+      {
+        name: "阿宗便當",
+        price: 90,
+        reason: "一個人又天氣熱，快又便宜"
+      },
+      {
+        name: "拉麵屋",
+        price: 220,
+        reason: "一個人也適合坐下來吃"
+      }
+    ],
+    "2-4": [
+      {
+        name: "熱炒店",
+        price: 250,
+        reason: "人多可以點菜分享"
+      }
+    ],
+    "5+": [
+      {
+        name: "合菜餐廳",
+        price: 300,
+        reason: "多人聚餐比較划算"
+      }
+    ]
+  };
 
-    card.innerHTML = `
-      <div class="name">${item.name}</div>
-      <div class="price">$${item.price}</div>
-      <div class="reason">${item.reason}</div>
-    `;
+  recommendBtn.addEventListener("click", () => {
+    // 清空舊結果
+    resultsEl.innerHTML = "";
 
-    resultsEl.appendChild(card);
+    // 取得選擇的人數
+    const people = document.querySelector(
+      'input[name="people"]:checked'
+    ).value;
+
+    const results = allResults[people];
+
+    results.forEach(item => {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <div class="name">${item.name}</div>
+        <div class="price">$${item.price}</div>
+        <div class="reason">${item.reason}</div>
+      `;
+      resultsEl.appendChild(card);
+    });
   });
 </script>
+
 
 
 </body>
