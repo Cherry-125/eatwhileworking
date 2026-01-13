@@ -37,6 +37,11 @@
     .reason {
       margin-top: 8px;
     }
+    .hint {
+      font-size: 14px;
+      color: #888;
+      margin-bottom: 12px;
+    }
   </style>
 </head>
 <body>
@@ -62,8 +67,8 @@
   </div>
 
   <!-- 位置狀態 -->
-  <div id="locationStatus" style="margin-bottom:12px;color:#666;">
-    尚未取得位置
+  <div id="locationStatus" class="hint">
+    嘗試取得目前位置…
   </div>
 
   <!-- 推薦按鈕 -->
@@ -77,6 +82,7 @@
     // 狀態
     // ========================
     let userLocation = null;
+
     const DEFAULT_LOCATION = {
       lat: 25.0330,
       lng: 121.5654
@@ -119,22 +125,13 @@
     };
 
     // ========================
-    // 取得使用者位置
+    // 嘗試取得使用者位置（失敗就用預設）
     // ========================
-
     function initLocation() {
       if (!navigator.geolocation) {
         useDefaultLocation("瀏覽器不支援定位，使用預設位置（台北市）");
         return;
       }
-    
-    //function getUserLocation() {
-    //  if (!navigator.geolocation) {
-    //    locationStatusEl.textContent = "此瀏覽器不支援定位";
-    //    return;
-    //  }
-
-    //  locationStatusEl.textContent = "正在取得位置…";
 
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -146,10 +143,10 @@
         },
         () => {
           useDefaultLocation("無法取得位置，使用預設位置（台北市）");
-          //locationStatusEl.textContent = "無法取得位置（請允許定位）";
         }
       );
     }
+
     function useDefaultLocation(message) {
       userLocation = DEFAULT_LOCATION;
       locationStatusEl.textContent = message;
@@ -182,5 +179,6 @@
     // 頁面載入時初始化位置
     initLocation();
   </script>
+
 </body>
 </html>
