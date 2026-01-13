@@ -42,7 +42,7 @@
 <body>
 
   <h1>WhatToEat</h1>
-
+  
   <div style="margin-bottom:16px;">
   <label>
     <input type="radio" name="people" value="1" checked />
@@ -59,12 +59,12 @@
     5 人以上
   </label>
 </div>
+  
+<button id="recommendBtn">幫我想吃什麼</button>
 
-  <button id="recommendBtn">幫我想吃什麼</button>
+<div id="results"></div>
 
-  <div id="results"></div>
-
-  <script>
+<script>
   const recommendBtn = document.getElementById("recommendBtn");
   const resultsEl = document.getElementById("results");
 
