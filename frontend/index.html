@@ -44,18 +44,38 @@
   <h1>eatwhileworking</h1>
 
   <button>幫我想吃什麼</button>
+  <div id="results"></div>
 
-  <div class="card">
-    <div class="name">阿宗便當</div>
-    <div class="price">$90</div>
-    <div class="reason">今天很熱，又是發薪前，清爽又便宜</div>
-  </div>
+  <script>
+  const fakeResults = [
+    {
+      name: "阿宗便當",
+      price: 90,
+      reason: "今天很熱，又是發薪前，清爽又便宜"
+    },
+    {
+      name: "一蘭拉麵",
+      price: 220,
+      reason: "發薪後，想吃熱熱的犒賞自己"
+    }
+  ];
 
-  <div class="card">
-    <div class="name">一蘭拉麵</div>
-    <div class="price">$220</div>
-    <div class="reason">發薪後，想吃熱熱的犒賞自己</div>
-  </div>
+  const resultsEl = document.getElementById("results");
+
+  fakeResults.forEach(item => {
+    const card = document.createElement("div");
+    card.className = "card";
+
+    card.innerHTML = `
+      <div class="name">${item.name}</div>
+      <div class="price">$${item.price}</div>
+      <div class="reason">${item.reason}</div>
+    `;
+
+    resultsEl.appendChild(card);
+  });
+</script>
+
 
 </body>
 </html>
