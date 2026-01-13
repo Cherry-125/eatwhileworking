@@ -60,6 +60,7 @@
   </label>
 </div>
 
+<!--位置狀態-->
 <div id="locationStatus" style="margin-bottom:12px;color:#666;">
   尚未取得位置
 </div>
@@ -69,11 +70,12 @@
 <div id="results"></div>
 
 <script>
+  
   let userLocation = null;
 
-  const locationStatusEl = document.getElementById("locationStatus");
   const recommendBtn = document.getElementById("recommendBtn");
   const resultsEl = document.getElementById("results");
+  const locationStatusEl = document.getElementById("locationStatus");
 
   const allResults = {
     "1": [
@@ -154,7 +156,9 @@ function getUserLocation() {
       resultsEl.appendChild(card);
     });
   });
-    getUserLocation();
+
+  
+  getUserLocation();
 </script>
 
 
