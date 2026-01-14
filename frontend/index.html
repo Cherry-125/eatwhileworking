@@ -39,86 +39,50 @@
   <label><input type="radio" name="people" value="5+" /> 5 人以上</label>
 </div>
 
-<div class="hint">📍 預設位置：台北市（穩定模式）</div>
+<div class="hint">📍 Demo 模式（模擬附近餐廳）</div>
 
 <button id="recommendBtn">幫我想吃什麼</button>
 
 <div id="results"></div>
 
 <script>
-const DEFAULT_LOCATION = { lat: 25.0330, lng: 121.5654 };
+const MOCK_RESTAURANTS = [
+  { name: "巷口牛肉麵", cuisine: "牛肉麵", price: "150–200" },
+  { name: "日式咖哩屋", cuisine: "咖哩飯", price: "180–250" },
+  { name: "便當店", cuisine: "台式便當", price: "100–130" },
+  { name: "義大利麵小館", cuisine: "義大利麵", price: "220–300" },
+  { name: "燒肉丼", cuisine: "日式丼飯", price: "180–260" }
+];
+
 const resultsEl = document.getElementById("results");
 const btn = document.getElementById("recommendBtn");
 
-const CORS_PROXY = "https://api.allorigins.win/raw?url=";
-const OVERPASS_API = "https://overpass-api.de/api/interpreter";
-
-// 備用資料（保險）
-const FALLBACK = [
-  { name: "附近小吃店", cuisine: "家常料理" },
-  { name: "便當店", cuisine: "台式" },
-  { name: "咖哩飯", cuisine: "日式" }
-];
-
-async function fetchNearbyRestaurants() {
-  const { lat, lng } = DEFAULT_LOCATION;
-
-  const query = `
-    [out:json][timeout:10];
-    node["amenity"="restaurant"]
-      (around:400, ${lat}, ${lng});
-    out 8;
-  `;
-
-  const response = await fetch(
-    CORS_PROXY + encodeURIComponent(OVERPASS_API),
-    { method: "POST", body: query }
-  );
-
-  const data = await response.json();
-
-  return data.elements
-    .filter(el => el.tags?.name)
-    .map(el => ({
-      name: el.tags.name,
-      cuisine: el.tags.cuisine || "料理"
-    }));
-}
-
 function reason(people, cuisine) {
-  if (people === "1") return `一個人也舒服的 ${cuisine}`;
+  if (people === "1") return `一個人也很適合的 ${cuisine}`;
   if (people === "2-4") return `朋友一起吃的 ${cuisine}`;
-  return `多人聚餐適合的 ${cuisine}`;
+  return `多人聚餐方便的 ${cuisine}`;
 }
 
-btn.addEventListener("click", async () => {
-  resultsEl.textContent = "正在思考中…";
-
+btn.addEventListener("click", () => {
+  resultsEl.innerHTML = "";
   const people = document.querySelector(
     'input[name="people"]:checked'
   ).value;
 
-  try {
-    const list = await fetchNearbyRestaurants();
-    render(list.length ? list : FALLBACK, people);
-  } catch {
-    render(FALLBACK, people);
-  }
+  MOCK_RESTAURANTS
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 3)
+    .forEach(r => {
+      const div = document.createElement("div");
+      div.className = "card";
+      div.innerHTML = `
+        <div class="name">${r.name}</div>
+        <div class="price">價位：${r.price}</div>
+        <div class="reason">${reason(people, r.cuisine)}</div>
+      `;
+      resultsEl.appendChild(div);
+    });
 });
-
-function render(list, people) {
-  resultsEl.innerHTML = "";
-  list.forEach(r => {
-    const div = document.createElement("div");
-    div.className = "card";
-    div.innerHTML = `
-      <div class="name">${r.name}</div>
-      <div class="price">價位：依店家</div>
-      <div class="reason">${reason(people, r.cuisine)}</div>
-    `;
-    resultsEl.appendChild(div);
-  });
-}
 </script>
 
 </body>
