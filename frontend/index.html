@@ -48,7 +48,7 @@
 
   <h1>eatwhileworking</h1>
 
-  <!-- 人數 -->
+  <!-- 人數選擇 -->
   <div style="margin-bottom:16px;">
     <label><input type="radio" name="people" value="1" checked /> 一個人</label>
     &nbsp;&nbsp;
@@ -72,11 +72,15 @@
       lng: 121.5654
     };
 
-    const recommendBtn = document.getElementById("recommendBtn");
     const resultsEl = document.getElementById("results");
+    const recommendBtn = document.getElementById("recommendBtn");
+
+    // AllOrigins CORS Proxy
+    const CORS_PROXY = "https://api.allorigins.win/raw?url=";
+    const OVERPASS_API = "https://overpass-api.de/api/interpreter";
 
     // ========================
-    // Overpass API 抓餐廳
+    // 抓附近餐廳（真實世界資料）
     // ========================
     async function fetchNearbyRestaurants() {
       const { lat, lng } = DEFAULT_LOCATION;
@@ -89,13 +93,14 @@
         out 20;
       `;
 
-      const response = await fetch(
-        "https://overpass-api.de/api/interpreter",
-        {
-          method: "POST",
-          body: query
-        }
-      );
+      const url =
+        CORS_PROXY +
+        encodeURIComponent(OVERPASS_API);
+
+      const response = await fetch(url, {
+        method: "POST",
+        body: query
+      });
 
       const data = await response.json();
 
@@ -103,12 +108,12 @@
         .filter(el => el.tags && el.tags.name)
         .map(el => ({
           name: el.tags.name,
-          cuisine: el.tags.cuisine || "綜合料理"
+          cuisine: el.tags.cuisine || "料理"
         }));
     }
 
     // ========================
-    // 根據人數產生推薦語
+    // 推薦理由
     // ========================
     function buildReason(people, cuisine) {
       if (people === "1") return `一個人也適合的 ${cuisine}`;
@@ -120,7 +125,7 @@
     // 點擊推薦
     // ========================
     recommendBtn.addEventListener("click", async () => {
-      resultsEl.innerHTML = "載入附近餐廳中…";
+      resultsEl.innerHTML = "正在找附近餐廳…";
 
       const people = document.querySelector(
         'input[name="people"]:checked'
@@ -130,6 +135,11 @@
         const restaurants = await fetchNearbyRestaurants();
 
         resultsEl.innerHTML = "";
+
+        if (restaurants.length === 0) {
+          resultsEl.textContent = "附近暫時找不到餐廳";
+          return;
+        }
 
         restaurants.slice(0, 5).forEach(r => {
           const card = document.createElement("div");
@@ -143,7 +153,7 @@
         });
 
       } catch (err) {
-        resultsEl.innerHTML = "目前無法取得附近餐廳";
+        resultsEl.textContent = "目前無法取得餐廳資料";
       }
     });
   </script>
