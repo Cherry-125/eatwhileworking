@@ -5,14 +5,11 @@
   <title>eatwhileworking</title>
   <style>
     body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: system-ui, sans-serif;
       padding: 24px;
       background: #fafafa;
     }
-    h1 {
-      font-size: 24px;
-      margin-bottom: 16px;
-    }
+    h1 { font-size: 24px; margin-bottom: 16px; }
     button {
       padding: 12px 16px;
       font-size: 16px;
@@ -26,137 +23,103 @@
       margin-bottom: 12px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.05);
     }
-    .name {
-      font-weight: bold;
-      font-size: 18px;
-    }
-    .price {
-      color: #666;
-      margin: 4px 0;
-    }
-    .reason {
-      margin-top: 8px;
-    }
-    .hint {
-      font-size: 14px;
-      color: #888;
-      margin-bottom: 12px;
-    }
+    .name { font-weight: bold; font-size: 18px; }
+    .price { color: #666; margin: 4px 0; }
+    .reason { margin-top: 8px; }
+    .hint { font-size: 14px; color: #888; margin-bottom: 12px; }
   </style>
 </head>
 <body>
 
-  <h1>eatwhileworking</h1>
+<h1>eatwhileworking</h1>
 
-  <!-- 人數選擇 -->
-  <div style="margin-bottom:16px;">
-    <label><input type="radio" name="people" value="1" checked /> 一個人</label>
-    &nbsp;&nbsp;
-    <label><input type="radio" name="people" value="2-4" /> 2–4 人</label>
-    &nbsp;&nbsp;
-    <label><input type="radio" name="people" value="5+" /> 5 人以上</label>
-  </div>
+<div style="margin-bottom:16px;">
+  <label><input type="radio" name="people" value="1" checked /> 一個人</label>
+  <label><input type="radio" name="people" value="2-4" /> 2–4 人</label>
+  <label><input type="radio" name="people" value="5+" /> 5 人以上</label>
+</div>
 
-  <div class="hint">📍 使用預設位置：台北市</div>
+<div class="hint">📍 預設位置：台北市（穩定模式）</div>
 
-  <button id="recommendBtn">幫我想吃什麼</button>
+<button id="recommendBtn">幫我想吃什麼</button>
 
-  <div id="results"></div>
+<div id="results"></div>
 
-  <script>
-    // ========================
-    // 設定
-    // ========================
-    const DEFAULT_LOCATION = {
-      lat: 25.0330,
-      lng: 121.5654
-    };
+<script>
+const DEFAULT_LOCATION = { lat: 25.0330, lng: 121.5654 };
+const resultsEl = document.getElementById("results");
+const btn = document.getElementById("recommendBtn");
 
-    const resultsEl = document.getElementById("results");
-    const recommendBtn = document.getElementById("recommendBtn");
+const CORS_PROXY = "https://api.allorigins.win/raw?url=";
+const OVERPASS_API = "https://overpass-api.de/api/interpreter";
 
-    // AllOrigins CORS Proxy
-    const CORS_PROXY = "https://api.allorigins.win/raw?url=";
-    const OVERPASS_API = "https://overpass-api.de/api/interpreter";
+// 備用資料（保險）
+const FALLBACK = [
+  { name: "附近小吃店", cuisine: "家常料理" },
+  { name: "便當店", cuisine: "台式" },
+  { name: "咖哩飯", cuisine: "日式" }
+];
 
-    // ========================
-    // 抓附近餐廳（真實世界資料）
-    // ========================
-    async function fetchNearbyRestaurants() {
-      const { lat, lng } = DEFAULT_LOCATION;
+async function fetchNearbyRestaurants() {
+  const { lat, lng } = DEFAULT_LOCATION;
 
-      const query = `
-        [out:json];
-        node
-          ["amenity"="restaurant"]
-          (around:800, ${lat}, ${lng});
-        out 20;
-      `;
+  const query = `
+    [out:json][timeout:10];
+    node["amenity"="restaurant"]
+      (around:400, ${lat}, ${lng});
+    out 8;
+  `;
 
-      const url =
-        CORS_PROXY +
-        encodeURIComponent(OVERPASS_API);
+  const response = await fetch(
+    CORS_PROXY + encodeURIComponent(OVERPASS_API),
+    { method: "POST", body: query }
+  );
 
-      const response = await fetch(url, {
-        method: "POST",
-        body: query
-      });
+  const data = await response.json();
 
-      const data = await response.json();
+  return data.elements
+    .filter(el => el.tags?.name)
+    .map(el => ({
+      name: el.tags.name,
+      cuisine: el.tags.cuisine || "料理"
+    }));
+}
 
-      return data.elements
-        .filter(el => el.tags && el.tags.name)
-        .map(el => ({
-          name: el.tags.name,
-          cuisine: el.tags.cuisine || "料理"
-        }));
-    }
+function reason(people, cuisine) {
+  if (people === "1") return `一個人也舒服的 ${cuisine}`;
+  if (people === "2-4") return `朋友一起吃的 ${cuisine}`;
+  return `多人聚餐適合的 ${cuisine}`;
+}
 
-    // ========================
-    // 推薦理由
-    // ========================
-    function buildReason(people, cuisine) {
-      if (people === "1") return `一個人也適合的 ${cuisine}`;
-      if (people === "2-4") return `朋友一起吃的 ${cuisine}`;
-      return `多人聚餐適合的 ${cuisine}`;
-    }
+btn.addEventListener("click", async () => {
+  resultsEl.textContent = "正在思考中…";
 
-    // ========================
-    // 點擊推薦
-    // ========================
-    recommendBtn.addEventListener("click", async () => {
-      resultsEl.innerHTML = "正在找附近餐廳…";
+  const people = document.querySelector(
+    'input[name="people"]:checked'
+  ).value;
 
-      const people = document.querySelector(
-        'input[name="people"]:checked'
-      ).value;
+  try {
+    const list = await fetchNearbyRestaurants();
+    render(list.length ? list : FALLBACK, people);
+  } catch {
+    render(FALLBACK, people);
+  }
+});
 
-      try {
-        const restaurants = await fetchNearbyRestaurants();
-
-        resultsEl.innerHTML = "";
-
-        if (restaurants.length === 0) {
-          resultsEl.textContent = "附近暫時找不到餐廳";
-          return;
-        }
-
-        restaurants.slice(0, 5).forEach(r => {
-          const card = document.createElement("div");
-          card.className = "card";
-          card.innerHTML = `
-            <div class="name">${r.name}</div>
-            <div class="price">價位：依店家</div>
-            <div class="reason">${buildReason(people, r.cuisine)}</div>
-          `;
-          resultsEl.appendChild(card);
-        });
-
-      } catch (err) {
-        resultsEl.textContent = "目前無法取得餐廳資料";
-      }
-    });
-  </script>
+function render(list, people) {
+  resultsEl.innerHTML = "";
+  list.forEach(r => {
+    const div = document.createElement("div");
+    div.className = "card";
+    div.innerHTML = `
+      <div class="name">${r.name}</div>
+      <div class="price">價位：依店家</div>
+      <div class="reason">${reason(people, r.cuisine)}</div>
+    `;
+    resultsEl.appendChild(div);
+  });
+}
+</script>
 
 </body>
 </html>
