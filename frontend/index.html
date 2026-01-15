@@ -96,6 +96,9 @@
       <input type="radio" name="people" value="2-4" />
       2–4 人
     </label>
+   
+
+
     <label>
       <input type="radio" name="people" value="5+" />
       5 人以上
@@ -107,13 +110,7 @@
   <div id="results"></div>
 
   <script>
-    async function fetchRestaurants() {
-      const res = await fetch(
-      "https://eatwhileworking.vercel.app/api/restaurants"
-      );
-      return await res.json();
-    }
-
+    const API_URL = "https://eatwhileworking.vercel.app/api/restaurants";
 
     const btn = document.getElementById("recommendBtn");
     const results = document.getElementById("results");
@@ -128,52 +125,42 @@
       return `${type} 類型選擇多，適合多人一起聚餐。`;
     }
 
-    btn.addEventListener("click", () => {
-      results.innerHTML = "";
+    async function fetchRestaurants() {
+      const res = await fetch(API_URL);
+      return await res.json();
+    }
+
+    btn.addEventListener("click", async () => {
+      results.innerHTML = "載入中…";
 
       const people = document.querySelector(
         'input[name="people"]:checked'
       ).value;
 
-      btn.addEventListener("click", async () => {
-  results.innerHTML = "載入中…";
+      try {
+        const restaurants = await fetchRestaurants();
 
-  const people = document.querySelector(
-    'input[name="people"]:checked'
-  ).value;
+        results.innerHTML = "";
 
-  const restaurants = await fetchRestaurants();
+        const picks = restaurants
+          .sort(() => Math.random() - 0.5)
+          .slice(0, 3);
 
-  results.innerHTML = "";
-
-  const picks = restaurants
-    .sort(() => Math.random() - 0.5)
-    .slice(0, 3);
-
-  picks.forEach(r => {
-    const card = document.createElement("div");
-    card.className = "card";
-    card.innerHTML = `
-      <div class="name">${r.name}</div>
-      <div class="price">類型：${r.type}</div>
-      <div class="reason">${getReason(people, r.type)}</div>
-      <div class="badge">附近餐廳</div>
-    `;
-    results.appendChild(card);
-  });
-});
-
-      picks.forEach(r => {
-        const card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = `
-          <div class="name">${r.name}</div>
-          <div class="price">價位：約 ${r.price}</div>
-          <div class="reason">${getReason(people, r.type)}</div>
-          <div class="badge">Demo 推薦</div>
-        `;
-        results.appendChild(card);
-      });
+        picks.forEach(r => {
+          const card = document.createElement("div");
+          card.className = "card";
+          card.innerHTML = `
+            <div class="name">${r.name}</div>
+            <div class="price">價位：約 ${r.price}</div>
+            <div class="reason">${getReason(people, r.type)}</div>
+            <div class="badge">附近推薦</div>
+          `;
+          results.appendChild(card);
+        });
+      } catch (err) {
+        results.innerHTML = "讀取失敗，請稍後再試";
+        console.error(err);
+      }
     });
   </script>
 
