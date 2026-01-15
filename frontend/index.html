@@ -107,14 +107,13 @@
   <div id="results"></div>
 
   <script>
-    const restaurants = [
-      { name: "巷口牛肉麵", type: "台式", price: "150–200" },
-      { name: "咖哩專賣店", type: "日式", price: "180–260" },
-      { name: "便當店", type: "台式", price: "100–130" },
-      { name: "義大利麵小館", type: "西式", price: "220–320" },
-      { name: "燒肉丼飯", type: "日式", price: "180–280" },
-      { name: "韓式石鍋拌飯", type: "韓式", price: "200–300" }
-    ];
+    async function fetchRestaurants() {
+      const res = await fetch(
+      "https://eatwhileworking.vercel.app/api/restaurants"
+      );
+      return await res.json();
+    }
+
 
     const btn = document.getElementById("recommendBtn");
     const results = document.getElementById("results");
@@ -136,9 +135,33 @@
         'input[name="people"]:checked'
       ).value;
 
-      const picks = [...restaurants]
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 3);
+      btn.addEventListener("click", async () => {
+  results.innerHTML = "載入中…";
+
+  const people = document.querySelector(
+    'input[name="people"]:checked'
+  ).value;
+
+  const restaurants = await fetchRestaurants();
+
+  results.innerHTML = "";
+
+  const picks = restaurants
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 3);
+
+  picks.forEach(r => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <div class="name">${r.name}</div>
+      <div class="price">類型：${r.type}</div>
+      <div class="reason">${getReason(people, r.type)}</div>
+      <div class="badge">附近餐廳</div>
+    `;
+    results.appendChild(card);
+  });
+});
 
       picks.forEach(r => {
         const card = document.createElement("div");
