@@ -1,13 +1,42 @@
-export default function handler(req, res) {
-  // 允許 GitHub Pages 存取（解 CORS）
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET");
+export default async function handler(req, res) {
+  const lat = Number(req.query.lat);
+  const lng = Number(req.query.lng);
 
-  res.status(200).json([
-    { name: "巷口牛肉麵", type: "台式", price: "150–200" },
-    { name: "咖哩專賣店", type: "日式", price: "180–260" },
-    { name: "便當店", type: "台式", price: "100–130" },
-    { name: "義大利麵小館", type: "西式", price: "220–320" },
-    { name: "燒肉丼飯", type: "日式", price: "180–280" }
-  ]);
+  // 🔒 保險：沒定位就用台北車站
+  const centerLat = isNaN(lat) ? 25.0478 : lat;
+  const centerLng = isNaN(lng) ? 121.5170 : lng;
+
+  const radius = 800; // 公尺
+
+  const query = `
+    [out:json][timeout:8];
+    (
+      node["amenity"="restaurant"](around:${radius},${centerLat},${centerLng});
+      node["amenity"="fast_food"](around:${radius},${centerLat},${centerLng});
+    );
+    out body;
+  `;
+
+  try {
+    const response = await fetch("https://overpass-api.de/api/interpreter", {
+      method: "POST",
+      body: query,
+    });
+
+    const data = await response.json();
+
+    const restaurants = data.elements
+      .filter(el => el.tags && el.tags.name)
+      .map(el => ({
+        name: el.tags.name,
+        lat: el.lat,
+        lng: el.lon,
+        type: el.tags.amenity,
+        price: "約 $150–300"
+      }));
+
+    res.status(200).json(restaurants);
+  } catch (err) {
+    res.status(500).json({ error: "Overpass API failed" });
+  }
 }
