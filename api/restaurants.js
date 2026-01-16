@@ -2,11 +2,11 @@ export default async function handler(req, res) {
   const lat = Number(req.query.lat);
   const lng = Number(req.query.lng);
 
-  // 🔒 保險：沒定位就用台北車站
+  // 保險備案：台北車站
   const centerLat = isNaN(lat) ? 25.0478 : lat;
   const centerLng = isNaN(lng) ? 121.5170 : lng;
 
-  const radius = 800; // 公尺
+  const radius = 800;
 
   const query = `
     [out:json][timeout:8];
@@ -20,7 +20,7 @@ export default async function handler(req, res) {
   try {
     const response = await fetch("https://overpass-api.de/api/interpreter", {
       method: "POST",
-      body: query,
+      body: query
     });
 
     const data = await response.json();
@@ -37,6 +37,6 @@ export default async function handler(req, res) {
 
     res.status(200).json(restaurants);
   } catch (err) {
-    res.status(500).json({ error: "Overpass API failed" });
+    res.status(500).json({ error: "fetch failed" });
   }
 }
