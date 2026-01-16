@@ -1,50 +1,24 @@
-export default async function handler(req, res) {
-   // CORS
+export default function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Methods", "GET");
 
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
-  const lat = Number(req.query.lat);
-  const lng = Number(req.query.lng);
+  const data = [
+    {
+      name: "巷口便當",
+      price: "NT$90",
+      reason: "快速、不用想"
+    },
+    {
+      name: "牛肉麵",
+      price: "NT$150",
+      reason: "安全牌、大家都能吃"
+    },
+    {
+      name: "日式咖哩",
+      price: "NT$160",
+      reason: "飽足感高，適合加班"
+    }
+  ];
 
-  // 保險備案：台北車站
-  const centerLat = isNaN(lat) ? 25.0478 : lat;
-  const centerLng = isNaN(lng) ? 121.5170 : lng;
-
-  const radius = 800;
-
-  const query = `
-    [out:json][timeout:8];
-    (
-      node["amenity"="restaurant"](around:${radius},${centerLat},${centerLng});
-      node["amenity"="fast_food"](around:${radius},${centerLat},${centerLng});
-    );
-    out body;
-  `;
-
-  try {
-    const response = await fetch("https://overpass-api.de/api/interpreter", {
-      method: "POST",
-      body: query
-    });
-
-    const data = await response.json();
-
-    const restaurants = data.elements
-      .filter(el => el.tags && el.tags.name)
-      .map(el => ({
-        name: el.tags.name,
-        lat: el.lat,
-        lng: el.lon,
-        type: el.tags.amenity,
-        price: "約 $150–300"
-      }));
-
-    res.status(200).json(restaurants);
-  } catch (err) {
-    res.status(500).json({ error: "fetch failed" });
-  }
+  res.status(200).json(data);
 }
