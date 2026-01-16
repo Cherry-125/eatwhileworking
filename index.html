@@ -3,135 +3,67 @@
 <head>
   <meta charset="UTF-8" />
   <title>eatwhileworking</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-
   <style>
     body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      margin: 40px;
+      font-family: system-ui, sans-serif;
+      padding: 40px;
     }
-
-    h1 {
-      margin-bottom: 4px;
-    }
-
-    .subtitle {
-      color: #666;
-      margin-bottom: 24px;
-    }
-
-    .options {
-      margin-bottom: 20px;
-    }
-
-    .options label {
-      margin-right: 16px;
-      cursor: pointer;
-    }
-
     button {
       padding: 12px 24px;
       font-size: 16px;
       cursor: pointer;
     }
-
-    #result {
-      margin-top: 24px;
-      font-size: 18px;
-    }
-
     .card {
       border: 1px solid #ddd;
-      padding: 16px;
-      border-radius: 8px;
-      max-width: 400px;
-    }
-
-    .error {
-      color: red;
-      margin-top: 16px;
+      padding: 12px;
+      margin-top: 12px;
+      border-radius: 6px;
     }
   </style>
 </head>
 <body>
-
   <h1>eatwhileworking</h1>
-  <div class="subtitle">不知道附近要吃什麼時，直接幫你決定</div>
+  <p>不知道附近要吃什麼時，直接幫你決定</p>
 
-  <div class="options">
-    <label>
-      <input type="radio" name="people" value="1" checked />
-      一個人
-    </label>
-
-    <label>
-      <input type="radio" name="people" value="2-4" />
-      2–4 人
-    </label>
-
-    <label>
-      <input type="radio" name="people" value="5+" />
-      5 人以上
-    </label>
+  <div>
+    <label><input type="radio" name="people" checked /> 一個人</label>
+    <label><input type="radio" name="people" /> 2–4 人</label>
+    <label><input type="radio" name="people" /> 5 人以上</label>
   </div>
 
-  <button id="pickBtn">幫我想吃什麼</button>
+  <br />
+  <button id="btn">幫我想吃什麼</button>
 
   <div id="result"></div>
-  <div id="error" class="error"></div>
 
   <script>
-    const pickBtn = document.getElementById("pickBtn");
-    const resultEl = document.getElementById("result");
-    const errorEl = document.getElementById("error");
+    const btn = document.getElementById("btn");
+    const result = document.getElementById("result");
 
-    async function fetchRestaurants() {
-      const res = await fetch("/api/restaurants");
-
-      if (!res.ok) {
-        throw new Error("API 讀取失敗");
-      }
-
-      return res.json();
-    }
-
-    function getSelectedPeople() {
-      return document.querySelector('input[name="people"]:checked').value;
-    }
-
-    function pickRandom(list) {
-      return list[Math.floor(Math.random() * list.length)];
-    }
-
-    pickBtn.addEventListener("click", async () => {
-      resultEl.innerHTML = "";
-      errorEl.textContent = "";
+    btn.addEventListener("click", async () => {
+      result.innerHTML = "讀取中…";
 
       try {
-        const people = getSelectedPeople();
-        const restaurants = await fetchRestaurants();
+        const res = await fetch("/api/restaurants");
+        const data = await res.json();
 
-        const filtered = restaurants.filter(r => r.people === people);
-
-        if (filtered.length === 0) {
-          errorEl.textContent = "找不到符合條件的餐廳";
-          return;
-        }
-
-        const pick = pickRandom(filtered);
-
-        resultEl.innerHTML = `
-          <div class="card">
-            <h3>${pick.name}</h3>
-            <div>類型：${pick.type}</div>
-          </div>
-        `;
+        result.innerHTML = "";
+        data.forEach(item => {
+          const div = document.createElement("div");
+          div.className = "card";
+          div.innerHTML = `
+            <strong>${item.name}</strong><br/>
+            價位：${item.price}<br/>
+            推薦原因：${item.reason}
+          `;
+          result.appendChild(div);
+        });
       } catch (err) {
+        result.innerHTML = "發生錯誤，請稍後再試";
         console.error(err);
-        errorEl.textContent = "讀取失敗，請稍後再試";
       }
     });
   </script>
-
 </body>
 </html>
+
