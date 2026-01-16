@@ -2,182 +2,129 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>eatwhileworking</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-
+  <title>今天吃什麼</title>
   <style>
     body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #fafafa;
-      padding: 24px;
-      max-width: 520px;
-      margin: auto;
+      font-family: system-ui;
+      background: #f5f5f5;
+      padding: 20px;
     }
-
-    h1 {
-      font-size: 24px;
-      margin-bottom: 8px;
-    }
-
-    .subtitle {
-      font-size: 14px;
-      color: #666;
-      margin-bottom: 20px;
-    }
-
-    .options {
-      margin-bottom: 16px;
-    }
-
-    .options label {
-      margin-right: 12px;
-      font-size: 14px;
-    }
-
-    button {
-      width: 100%;
-      padding: 14px;
-      font-size: 16px;
-      border: none;
-      border-radius: 8px;
-      background: #111;
-      color: white;
-      cursor: pointer;
-      margin-bottom: 20px;
-    }
-
     .card {
       background: white;
-      border-radius: 10px;
       padding: 16px;
-      margin-bottom: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.06);
-    }
-
-    .name {
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-
-    .price {
-      font-size: 14px;
-      color: #666;
-    }
-
-    .reason {
-      margin-top: 8px;
-      font-size: 14px;
-      line-height: 1.4;
-    }
-
-    .badge {
-      display: inline-block;
-      font-size: 12px;
-      background: #eee;
-      padding: 4px 8px;
       border-radius: 12px;
-      margin-top: 8px;
+      margin-bottom: 12px;
+    }
+    .name {
+      font-weight: bold;
+      font-size: 18px;
+    }
+    .badge {
+      font-size: 12px;
+      color: #666;
     }
   </style>
 </head>
-
 <body>
 
-  <h1>eatwhileworking</h1>
-  <div class="subtitle">不知道附近要吃什麼時，直接幫你決定</div>
+<h1>🍱 今天吃什麼</h1>
 
-  <div class="options">
-    <label>
-      <input type="radio" name="people" value="1" checked />
-      一個人
-    </label>
-    <label>
-      <input type="radio" name="people" value="2-4" />
-      2–4 人
-    </label>
-   
+<div>
+  <label>
+    <input type="radio" name="people" value="1" checked /> 一個人
+  </label>
+  <label>
+    <input type="radio" name="people" value="2" /> 多人
+  </label>
+</div>
 
+<br />
+<button id="btn">幫我想吃什麼</button>
 
-    <label>
-      <input type="radio" name="people" value="5+" />
-      5 人以上
-    </label>
-  </div>
+<hr />
+<div id="results"></div>
 
-  <button id="recommendBtn">幫我想吃什麼</button>
+<script>
+  const btn = document.getElementById("btn");
+  const results = document.getElementById("results");
 
-  <div id="results"></div>
+  async function fetchRestaurants() {
+    let lat = null;
+    let lng = null;
 
-  <script>
-    const API_URL = "https://eatwhileworking.vercel.app/api/restaurants";
-
-    const btn = document.getElementById("recommendBtn");
-    const results = document.getElementById("results");
-
-    function getReason(people, type) {
-      if (people === "1") {
-        return `一個人也很適合的 ${type}，出餐快、不用等人。`;
-      }
-      if (people === "2-4") {
-        return `${type} 很適合朋友一起吃，可以分食也好聊天。`;
-      }
-      return `${type} 類型選擇多，適合多人一起聚餐。`;
+    try {
+      const pos = await new Promise((resolve, reject) =>
+        navigator.geolocation.getCurrentPosition(resolve, reject)
+      );
+      lat = pos.coords.latitude;
+      lng = pos.coords.longitude;
+    } catch {
+      console.log("使用預設位置");
     }
 
-    async function fetchRestaurants() {
-      const res = await fetch(API_URL);
-      return await res.json();
-    }
+    const base = "https://YOUR_VERCEL_DOMAIN/api/restaurants";
 
-    btn.addEventListener("click", async () => {
-      results.innerHTML = "載入中…";
+    const url =
+      lat && lng ? `${base}?lat=${lat}&lng=${lng}` : base;
 
-      const people = document.querySelector(
-        'input[name="people"]:checked'
-      ).value;
+    const res = await fetch(url);
+    return { data: await res.json(), lat, lng };
+  }
 
-      try {
-        const restaurants = await fetchRestaurants();
-
-        results.innerHTML = "";
-
-        const picks = restaurants
-          .sort(() => Math.random() - 0.5)
-          .slice(0, 3);
-
-        picks.forEach(r => {
-          const card = document.createElement("div");
-          card.className = "card";
-          card.innerHTML = `
-            <div class="name">${r.name}</div>
-            <div class="price">價位：約 ${r.price}</div>
-            <div class="reason">${getReason(people, r.type)}</div>
-            <div class="badge">附近推薦</div>
-          `;
-          results.appendChild(card);
-        });
-
-      } catch (err) {
-        results.innerHTML = "讀取失敗，請稍後再試";
-        console.error(err);
-      }
-    });
-
-    function calcDistance(lat1, lon1, lat2, lon2) {
-      const R = 6371;
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(lat1 * Math.PI / 180) *
-        Math.cos(lat2 * Math.PI / 180) *
-        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  function calcDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(lat1 * Math.PI / 180) *
+      Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) ** 2;
 
     return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))).toFixed(2);
-    }
+  }
 
-  </script>
+  function getReason(people, type) {
+    if (people === "1") return "適合一個人快速解決";
+    return "適合多人一起吃";
+  }
+
+  btn.addEventListener("click", async () => {
+    results.innerHTML = "載入中…";
+
+    const people = document.querySelector(
+      'input[name="people"]:checked'
+    ).value;
+
+    try {
+      const { data, lat, lng } = await fetchRestaurants();
+
+      results.innerHTML = "";
+
+      const picks = data
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 3);
+
+      picks.forEach(r => {
+        const distance =
+          lat && lng ? calcDistance(lat, lng, r.lat, r.lng) : null;
+
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <div class="name">${r.name}</div>
+          <div>${r.price}</div>
+          <div>${getReason(people, r.type)}</div>
+          ${distance ? `<div class="badge">距離 ${distance} km</div>` : ""}
+        `;
+        results.appendChild(card);
+      });
+    } catch (err) {
+      results.innerHTML = "發生錯誤";
+      console.error(err);
+    }
+  });
+</script>
 
 </body>
 </html>
