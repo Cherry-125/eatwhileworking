@@ -2,129 +2,136 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>今天吃什麼</title>
+  <title>eatwhileworking</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <style>
     body {
-      font-family: system-ui;
-      background: #f5f5f5;
-      padding: 20px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 40px;
     }
-    .card {
-      background: white;
-      padding: 16px;
-      border-radius: 12px;
-      margin-bottom: 12px;
+
+    h1 {
+      margin-bottom: 4px;
     }
-    .name {
-      font-weight: bold;
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 24px;
+    }
+
+    .options {
+      margin-bottom: 20px;
+    }
+
+    .options label {
+      margin-right: 16px;
+      cursor: pointer;
+    }
+
+    button {
+      padding: 12px 24px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    #result {
+      margin-top: 24px;
       font-size: 18px;
     }
-    .badge {
-      font-size: 12px;
-      color: #666;
+
+    .card {
+      border: 1px solid #ddd;
+      padding: 16px;
+      border-radius: 8px;
+      max-width: 400px;
+    }
+
+    .error {
+      color: red;
+      margin-top: 16px;
     }
   </style>
 </head>
 <body>
 
-<h1>🍱 今天吃什麼</h1>
+  <h1>eatwhileworking</h1>
+  <div class="subtitle">不知道附近要吃什麼時，直接幫你決定</div>
 
-<div>
-  <label>
-    <input type="radio" name="people" value="1" checked /> 一個人
-  </label>
-  <label>
-    <input type="radio" name="people" value="2" /> 多人
-  </label>
-</div>
+  <div class="options">
+    <label>
+      <input type="radio" name="people" value="1" checked />
+      一個人
+    </label>
 
-<br />
-<button id="btn">幫我想吃什麼</button>
+    <label>
+      <input type="radio" name="people" value="2-4" />
+      2–4 人
+    </label>
 
-<hr />
-<div id="results"></div>
+    <label>
+      <input type="radio" name="people" value="5+" />
+      5 人以上
+    </label>
+  </div>
 
-<script>
-  const btn = document.getElementById("btn");
-  const results = document.getElementById("results");
+  <button id="pickBtn">幫我想吃什麼</button>
 
-  async function fetchRestaurants() {
-    let lat = null;
-    let lng = null;
+  <div id="result"></div>
+  <div id="error" class="error"></div>
 
-    try {
-      const pos = await new Promise((resolve, reject) =>
-        navigator.geolocation.getCurrentPosition(resolve, reject)
-      );
-      lat = pos.coords.latitude;
-      lng = pos.coords.longitude;
-    } catch {
-      console.log("使用預設位置");
+  <script>
+    const pickBtn = document.getElementById("pickBtn");
+    const resultEl = document.getElementById("result");
+    const errorEl = document.getElementById("error");
+
+    async function fetchRestaurants() {
+      const res = await fetch("/api/restaurants");
+
+      if (!res.ok) {
+        throw new Error("API 讀取失敗");
+      }
+
+      return res.json();
     }
 
-    const base = "https://eatwhileworking.vercel.app/api/restaurants";
+    function getSelectedPeople() {
+      return document.querySelector('input[name="people"]:checked').value;
+    }
 
-    const url =
-      lat && lng ? `${base}?lat=${lat}&lng=${lng}` : base;
+    function pickRandom(list) {
+      return list[Math.floor(Math.random() * list.length)];
+    }
 
-    const res = await fetch(url);
-    return { data: await res.json(), lat, lng };
-  }
+    pickBtn.addEventListener("click", async () => {
+      resultEl.innerHTML = "";
+      errorEl.textContent = "";
 
-  function calcDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos(lat1 * Math.PI / 180) *
-      Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLon / 2) ** 2;
+      try {
+        const people = getSelectedPeople();
+        const restaurants = await fetchRestaurants();
 
-    return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))).toFixed(2);
-  }
+        const filtered = restaurants.filter(r => r.people === people);
 
-  function getReason(people, type) {
-    if (people === "1") return "適合一個人快速解決";
-    return "適合多人一起吃";
-  }
+        if (filtered.length === 0) {
+          errorEl.textContent = "找不到符合條件的餐廳";
+          return;
+        }
 
-  btn.addEventListener("click", async () => {
-    results.innerHTML = "載入中…";
+        const pick = pickRandom(filtered);
 
-    const people = document.querySelector(
-      'input[name="people"]:checked'
-    ).value;
-
-    try {
-      const { data, lat, lng } = await fetchRestaurants();
-
-      results.innerHTML = "";
-
-      const picks = data
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 3);
-
-      picks.forEach(r => {
-        const distance =
-          lat && lng ? calcDistance(lat, lng, r.lat, r.lng) : null;
-
-        const card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = `
-          <div class="name">${r.name}</div>
-          <div>${r.price}</div>
-          <div>${getReason(people, r.type)}</div>
-          ${distance ? `<div class="badge">距離 ${distance} km</div>` : ""}
+        resultEl.innerHTML = `
+          <div class="card">
+            <h3>${pick.name}</h3>
+            <div>類型：${pick.type}</div>
+          </div>
         `;
-        results.appendChild(card);
-      });
-    } catch (err) {
-      results.innerHTML = "發生錯誤";
-      console.error(err);
-    }
-  });
-</script>
+      } catch (err) {
+        console.error(err);
+        errorEl.textContent = "讀取失敗，請稍後再試";
+      }
+    });
+  </script>
 
 </body>
 </html>
